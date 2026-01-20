@@ -62,16 +62,25 @@ export function IconPicker({ ctx }: Props) {
 
   return (
     <Canvas ctx={ctx}>
-      {/* Current selection */}
-      {CurrentIcon && (
-        <div className="current-selection">
-          <CurrentIcon size={24} />
-          <span>{currentValue}</span>
-          <Button buttonSize="xxs" onClick={clearIcon}>
-            Clear
-          </Button>
-        </div>
-      )}
+      {/* Current selection - always visible */}
+      <div className="current-selection">
+        {CurrentIcon ? (
+          <>
+            <div className="selected-icon">
+              <CurrentIcon size={32} />
+            </div>
+            <div className="selected-info">
+              <strong>{currentIconName}</strong>
+              <span className="selected-value">{currentValue}</span>
+            </div>
+            <Button buttonSize="xs" onClick={clearIcon}>
+              Clear
+            </Button>
+          </>
+        ) : (
+          <span className="no-selection">No icon selected</span>
+        )}
+      </div>
 
       {/* Search */}
       <TextInput
