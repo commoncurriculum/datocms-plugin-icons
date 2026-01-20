@@ -1,7 +1,8 @@
 import { RenderFieldExtensionCtx } from 'datocms-plugin-sdk';
 import { Canvas, Button, TextInput, SelectInput } from 'datocms-react-ui';
 import * as LucideIcons from 'lucide-react';
-import { useState, useMemo, useEffect, useCallback, ComponentType } from 'react';
+import { useState, useMemo, useEffect, useCallback, useRef, ComponentType } from 'react';
+import { kebabCase, pascalCase } from 'change-case';
 
 interface Props {
   ctx: RenderFieldExtensionCtx;
@@ -19,17 +20,6 @@ const ALL_ICONS = Object.keys(LucideIcons).filter(
     key !== 'Icon' &&
     !key.startsWith('Lucide')
 );
-
-function toKebabCase(str: string): string {
-  return str.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase();
-}
-
-function toPascalCase(str: string): string {
-  return str
-    .split('-')
-    .map((s) => s.charAt(0).toUpperCase() + s.slice(1))
-    .join('');
-}
 
 type CategoryData = Record<string, string[]>;
 
@@ -84,15 +74,16 @@ export function IconPicker({ ctx }: Props) {
   const [categoryData, setCategoryData] = useState<CategoryData>({});
   const [isExpanded, setIsExpanded] = useState(false);
 
-  // Simple local state - ignore ctx.formValues entirely after initial load
-  const [selectedValue, setSelectedValue] = useState<string | null>(() => {
-    const initial = (ctx.formValues[ctx.fieldPath] as string | null) || null;
-    console.log('[IconPicker] Initial state:', { fieldPath: ctx.fieldPath, initial, formValues: ctx.formValues });
-    return initial;
-  });
+  // Use a ref to store the selected value to persist across re-renders/re-mounts
+  const selectedValueRef = useRef<string | null>(
+    (ctx.formValues[ctx.fieldPath] as string | null) || null
+  );
 
-  // Debug: log on every render
-  console.log('[IconPicker] Render:', { selectedValue, fieldPath: ctx.fieldPath });
+  // State to trigger re-renders
+  const [, forceUpdate] = useState({});
+
+  // Getter for current value
+  const selectedValue = selectedValueRef.current;
 
   // Fetch category data
   useEffect(() => {
@@ -105,7 +96,7 @@ export function IconPicker({ ctx }: Props) {
   // Parse current icon name from value like "lucide:target"
   const currentIconName = selectedValue?.replace('lucide:', '') || null;
   const CurrentIcon = currentIconName
-    ? iconsMap[toPascalCase(currentIconName)]
+    ? iconsMap[pascalCase(currentIconName)]
     : null;
 
   // Filter icons based on search and category
@@ -115,7 +106,7 @@ export function IconPicker({ ctx }: Props) {
     // Filter by category
     if (category && Object.keys(categoryData).length > 0) {
       icons = icons.filter((name) => {
-        const kebabName = toKebabCase(name);
+        const kebabName = kebabCase(name);
         const categories = categoryData[kebabName] || [];
         return categories.includes(category);
       });
@@ -131,20 +122,18 @@ export function IconPicker({ ctx }: Props) {
   }, [search, category, categoryData]);
 
   const selectIcon = useCallback((pascalName: string) => {
-    const kebabName = toKebabCase(pascalName);
+    const kebabName = kebabCase(pascalName);
     const newValue = `lucide:${kebabName}`;
-    console.log('[IconPicker] selectIcon called:', { pascalName, kebabName, newValue });
-    console.log('[IconPicker] ctx.fieldPath:', ctx.fieldPath);
-    setSelectedValue(newValue);
-    console.log('[IconPicker] setSelectedValue called with:', newValue);
+    selectedValueRef.current = newValue;
     ctx.setFieldValue(ctx.fieldPath, newValue);
-    console.log('[IconPicker] ctx.setFieldValue called');
     setIsExpanded(false);
+    forceUpdate({});
   }, [ctx]);
 
   const clearIcon = useCallback(() => {
-    setSelectedValue(null);
+    selectedValueRef.current = null;
     ctx.setFieldValue(ctx.fieldPath, null);
+    forceUpdate({});
   }, [ctx]);
 
   // Picker visible when expanded or no icon selected
@@ -203,7 +192,7 @@ export function IconPicker({ ctx }: Props) {
             <div className="icon-grid-container">
               {filteredIcons.map((name) => {
                 const Icon = iconsMap[name];
-                const isSelected = toPascalCase(currentIconName || '') === name;
+                const isSelected = pascalCase(currentIconName || '') === name;
                 return (
                   <button
                     key={name}
