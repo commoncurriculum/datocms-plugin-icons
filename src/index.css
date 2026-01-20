@@ -19,6 +19,7 @@
   background: var(--accent-color);
   border-radius: 8px;
   color: white;
+  flex-shrink: 0;
 }
 
 .selected-info {
@@ -26,6 +27,7 @@
   flex-direction: column;
   flex: 1;
   gap: 2px;
+  min-width: 0;
 }
 
 .selected-info strong {
@@ -45,23 +47,27 @@
 
 .filters {
   display: flex;
-  flex-direction: column;
   gap: 8px;
   margin-bottom: 12px;
 }
 
-.filter-row {
-  display: flex;
-  gap: 8px;
+.filters > * {
+  flex: 1;
+}
+
+.icon-grid-container {
+  max-height: 300px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
 }
 
 .icon-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
   gap: 4px;
-  max-height: 300px;
-  overflow-y: auto;
-  margin-top: 12px;
+  padding: 8px;
 }
 
 .icon-button {

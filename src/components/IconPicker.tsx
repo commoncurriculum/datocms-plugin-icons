@@ -82,7 +82,19 @@ export function IconPicker({ ctx }: Props) {
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('');
   const [categoryData, setCategoryData] = useState<CategoryData>({});
-  const currentValue = ctx.formValues[ctx.fieldPath] as string | null;
+
+  // Track selection locally for immediate feedback
+  const [localValue, setLocalValue] = useState<string | null>(
+    (ctx.formValues[ctx.fieldPath] as string | null) || null
+  );
+
+  // Sync from DatoCMS when it changes externally
+  useEffect(() => {
+    const externalValue = ctx.formValues[ctx.fieldPath] as string | null;
+    if (externalValue !== localValue) {
+      setLocalValue(externalValue);
+    }
+  }, [ctx.formValues[ctx.fieldPath]]);
 
   // Fetch category data
   useEffect(() => {
@@ -93,7 +105,7 @@ export function IconPicker({ ctx }: Props) {
   }, []);
 
   // Parse current icon name from value like "lucide:target"
-  const currentIconName = currentValue?.replace('lucide:', '') || null;
+  const currentIconName = localValue?.replace('lucide:', '') || null;
   const CurrentIcon = currentIconName
     ? iconsMap[toPascalCase(currentIconName)]
     : null;
@@ -122,10 +134,13 @@ export function IconPicker({ ctx }: Props) {
 
   const selectIcon = (pascalName: string) => {
     const kebabName = toKebabCase(pascalName);
-    ctx.setFieldValue(ctx.fieldPath, `lucide:${kebabName}`);
+    const newValue = `lucide:${kebabName}`;
+    setLocalValue(newValue); // Immediate local update
+    ctx.setFieldValue(ctx.fieldPath, newValue);
   };
 
   const clearIcon = () => {
+    setLocalValue(null);
     ctx.setFieldValue(ctx.fieldPath, null);
   };
 
@@ -140,7 +155,7 @@ export function IconPicker({ ctx }: Props) {
             </div>
             <div className="selected-info">
               <strong>{currentIconName}</strong>
-              <span className="selected-value">{currentValue}</span>
+              <span className="selected-value">{localValue}</span>
             </div>
             <Button buttonSize="xs" onClick={clearIcon}>
               Clear
@@ -151,17 +166,15 @@ export function IconPicker({ ctx }: Props) {
         )}
       </div>
 
-      {/* Filters */}
+      {/* Filters - same row */}
       <div className="filters">
-        <div className="filter-row">
-          <SelectInput
-            id="category-select"
-            name="category"
-            value={{ label: CATEGORY_OPTIONS.find(o => o.value === category)?.label || 'All Categories', value: category }}
-            onChange={(newValue) => setCategory(newValue?.value || '')}
-            options={CATEGORY_OPTIONS}
-          />
-        </div>
+        <SelectInput
+          id="category-select"
+          name="category"
+          value={{ label: CATEGORY_OPTIONS.find(o => o.value === category)?.label || 'All Categories', value: category }}
+          onChange={(newValue) => setCategory(newValue?.value || '')}
+          options={CATEGORY_OPTIONS}
+        />
         <TextInput
           id="search-input"
           name="search"
@@ -171,24 +184,26 @@ export function IconPicker({ ctx }: Props) {
         />
       </div>
 
-      {/* Icon grid */}
-      <div className="icon-grid">
-        {filteredIcons.map((name) => {
-          const Icon = iconsMap[name];
-          const isSelected = toPascalCase(currentIconName || '') === name;
-          return (
-            <button
-              key={name}
-              className={`icon-button ${isSelected ? 'selected' : ''}`}
-              onClick={() => selectIcon(name)}
-              title={name}
-              type="button"
-            >
-              <Icon size={20} />
-              <span>{name}</span>
-            </button>
-          );
-        })}
+      {/* Icon grid - contained scroll */}
+      <div className="icon-grid-container">
+        <div className="icon-grid">
+          {filteredIcons.map((name) => {
+            const Icon = iconsMap[name];
+            const isSelected = toPascalCase(currentIconName || '') === name;
+            return (
+              <button
+                key={name}
+                className={`icon-button ${isSelected ? 'selected' : ''}`}
+                onClick={() => selectIcon(name)}
+                title={name}
+                type="button"
+              >
+                <Icon size={20} />
+                <span>{name}</span>
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {filteredIcons.length === 0 && (
