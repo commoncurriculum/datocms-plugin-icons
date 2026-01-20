@@ -85,9 +85,14 @@ export function IconPicker({ ctx }: Props) {
   const [isExpanded, setIsExpanded] = useState(false);
 
   // Simple local state - ignore ctx.formValues entirely after initial load
-  const [selectedValue, setSelectedValue] = useState<string | null>(
-    () => (ctx.formValues[ctx.fieldPath] as string | null) || null
-  );
+  const [selectedValue, setSelectedValue] = useState<string | null>(() => {
+    const initial = (ctx.formValues[ctx.fieldPath] as string | null) || null;
+    console.log('[IconPicker] Initial state:', { fieldPath: ctx.fieldPath, initial, formValues: ctx.formValues });
+    return initial;
+  });
+
+  // Debug: log on every render
+  console.log('[IconPicker] Render:', { selectedValue, fieldPath: ctx.fieldPath });
 
   // Fetch category data
   useEffect(() => {
@@ -128,8 +133,12 @@ export function IconPicker({ ctx }: Props) {
   const selectIcon = useCallback((pascalName: string) => {
     const kebabName = toKebabCase(pascalName);
     const newValue = `lucide:${kebabName}`;
+    console.log('[IconPicker] selectIcon called:', { pascalName, kebabName, newValue });
+    console.log('[IconPicker] ctx.fieldPath:', ctx.fieldPath);
     setSelectedValue(newValue);
+    console.log('[IconPicker] setSelectedValue called with:', newValue);
     ctx.setFieldValue(ctx.fieldPath, newValue);
+    console.log('[IconPicker] ctx.setFieldValue called');
     setIsExpanded(false);
   }, [ctx]);
 
