@@ -1,7 +1,7 @@
 import { RenderFieldExtensionCtx } from 'datocms-plugin-sdk';
 import { Canvas, Button, TextInput, SelectInput } from 'datocms-react-ui';
 import * as LucideIcons from 'lucide-react';
-import { useState, useMemo, useEffect, useCallback, useRef, ComponentType } from 'react';
+import { useState, useMemo, useEffect, useCallback, ComponentType } from 'react';
 import { kebabCase, pascalCase } from 'change-case';
 
 interface Props {
@@ -74,16 +74,14 @@ export function IconPicker({ ctx }: Props) {
   const [categoryData, setCategoryData] = useState<CategoryData>({});
   const [isExpanded, setIsExpanded] = useState(false);
 
-  // Use a ref to store the selected value to persist across re-renders/re-mounts
-  const selectedValueRef = useRef<string | null>(
-    (ctx.formValues[ctx.fieldPath] as string | null) || null
-  );
+  // Track the selected value in state, synced with form values
+  const formValue = (ctx.formValues[ctx.fieldPath] as string | null) || null;
+  const [selectedValue, setSelectedValue] = useState<string | null>(formValue);
 
-  // State to trigger re-renders
-  const [, forceUpdate] = useState({});
-
-  // Getter for current value
-  const selectedValue = selectedValueRef.current;
+  // Sync with external form value changes (e.g., after save/reload)
+  useEffect(() => {
+    setSelectedValue(formValue);
+  }, [formValue]);
 
   // Fetch category data
   useEffect(() => {
@@ -121,23 +119,21 @@ export function IconPicker({ ctx }: Props) {
     return icons;
   }, [search, category, categoryData]);
 
-  const selectIcon = useCallback((pascalName: string) => {
+  const selectIcon = useCallback(async (pascalName: string) => {
     const kebabName = kebabCase(pascalName);
     const newValue = `lucide:${kebabName}`;
-    selectedValueRef.current = newValue;
-    ctx.setFieldValue(ctx.fieldPath, newValue);
+    setSelectedValue(newValue);
     setIsExpanded(false);
-    forceUpdate({});
+    await ctx.setFieldValue(ctx.fieldPath, newValue);
   }, [ctx]);
 
-  const clearIcon = useCallback(() => {
-    selectedValueRef.current = null;
-    ctx.setFieldValue(ctx.fieldPath, null);
-    forceUpdate({});
+  const clearIcon = useCallback(async () => {
+    setSelectedValue(null);
+    await ctx.setFieldValue(ctx.fieldPath, null);
   }, [ctx]);
 
-  // Picker visible when expanded or no icon selected
-  const showPicker = isExpanded || !selectedValue;
+  // Picker visible only when explicitly expanded
+  const showPicker = isExpanded;
 
   return (
     <Canvas ctx={ctx}>
@@ -163,7 +159,12 @@ export function IconPicker({ ctx }: Props) {
               </div>
             </>
           ) : (
-            <span className="no-selection">No icon selected</span>
+            <>
+              <span className="no-selection">No icon selected</span>
+              <Button buttonSize="xs" onClick={() => setIsExpanded(true)}>
+                Add
+              </Button>
+            </>
           )}
         </div>
 

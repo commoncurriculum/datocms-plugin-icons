@@ -1,5 +1,4 @@
 .icon-picker-root {
-  max-height: 500px;
   display: flex;
   flex-direction: column;
 }
@@ -62,8 +61,6 @@
   margin-top: 12px;
   display: flex;
   flex-direction: column;
-  min-height: 0;
-  flex: 1;
 }
 
 .filters {
@@ -86,7 +83,6 @@
   border-radius: 4px;
   overflow-y: auto;
   max-height: 300px;
-  flex: 1;
 }
 
 .icon-button {

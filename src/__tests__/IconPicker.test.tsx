@@ -60,13 +60,28 @@ describe('IconPicker', () => {
     expect(screen.getByText('lucide:a-arrow-down')).toBeInTheDocument()
   })
 
-  it('shows picker when no icon is selected', async () => {
+  it('shows Add button (not picker) when no icon is selected', async () => {
     const ctx = createMockCtx()
     render(<IconPicker ctx={ctx} />)
 
-    // Use getAllByPlaceholderText and check length
-    const searchInputs = screen.getAllByPlaceholderText('Search icons...')
-    expect(searchInputs.length).toBeGreaterThan(0)
+    // Should show Add button
+    expect(screen.getByRole('button', { name: 'Add' })).toBeInTheDocument()
+
+    // Should NOT show the picker (no search input)
+    expect(screen.queryByPlaceholderText('Search icons...')).not.toBeInTheDocument()
+  })
+
+  it('shows picker when Add is clicked', async () => {
+    const ctx = createMockCtx()
+    render(<IconPicker ctx={ctx} />)
+
+    // Click Add button
+    fireEvent.click(screen.getByRole('button', { name: 'Add' }))
+
+    // Now picker should be visible
+    await waitFor(() => {
+      expect(screen.getByPlaceholderText('Search icons...')).toBeInTheDocument()
+    })
   })
 
   it('hides picker when icon is selected', async () => {
@@ -84,6 +99,9 @@ describe('IconPicker', () => {
     const setFieldValue = vi.fn()
     const ctx = createMockCtx({ setFieldValue })
     render(<IconPicker ctx={ctx} />)
+
+    // Open picker first
+    fireEvent.click(screen.getByRole('button', { name: 'Add' }))
 
     // Find the first icon button
     const iconButtons = await screen.findAllByTitle('AArrowDown')
@@ -125,9 +143,12 @@ describe('IconPicker', () => {
     const ctx = createMockCtx()
     render(<IconPicker ctx={ctx} />)
 
+    // Open picker first
+    fireEvent.click(screen.getByRole('button', { name: 'Add' }))
+
     // Get search input
-    const searchInputs = screen.getAllByPlaceholderText('Search icons...')
-    fireEvent.change(searchInputs[0], { target: { value: 'accessibility' } })
+    const searchInput = screen.getByPlaceholderText('Search icons...')
+    fireEvent.change(searchInput, { target: { value: 'accessibility' } })
 
     // Should find Accessibility icon
     await waitFor(() => {
@@ -159,6 +180,9 @@ describe('IconPicker', () => {
     const ctx = createMockCtx({ setFieldValue })
     render(<IconPicker ctx={ctx} />)
 
+    // Open picker first
+    fireEvent.click(screen.getByRole('button', { name: 'Add' }))
+
     // Select an icon
     const iconButtons = await screen.findAllByTitle('AArrowDown')
     fireEvent.click(iconButtons[0])
@@ -174,5 +198,90 @@ describe('IconPicker', () => {
     // Selection should still be visible at top
     expect(screen.getByText('a-arrow-down')).toBeInTheDocument()
     expect(screen.getByText('lucide:a-arrow-down')).toBeInTheDocument()
+  })
+
+  it('syncs with external form value changes', async () => {
+    const setFieldValue = vi.fn()
+    const ctx = createMockCtx({ setFieldValue })
+    const { rerender } = render(<IconPicker ctx={ctx} />)
+
+    // Initially no icon
+    expect(screen.getByText('No icon selected')).toBeInTheDocument()
+
+    // Simulate external change (e.g., after save/reload)
+    const updatedCtx = createMockCtx({
+      formValues: { icon: 'lucide:target' },
+      setFieldValue,
+    })
+    rerender(<IconPicker ctx={updatedCtx} />)
+
+    // Should show the new icon
+    await waitFor(() => {
+      expect(screen.getByText('target')).toBeInTheDocument()
+      expect(screen.getByText('lucide:target')).toBeInTheDocument()
+    })
+  })
+
+  it('awaits setFieldValue before updating UI', async () => {
+    const setFieldValue = vi.fn(() => Promise.resolve())
+    const ctx = createMockCtx({ setFieldValue })
+    render(<IconPicker ctx={ctx} />)
+
+    // Open picker
+    fireEvent.click(screen.getByRole('button', { name: 'Add' }))
+
+    // Select an icon
+    const iconButtons = await screen.findAllByTitle('AArrowDown')
+    fireEvent.click(iconButtons[0])
+
+    // setFieldValue should have been awaited (called and resolved)
+    expect(setFieldValue).toHaveBeenCalledWith('icon', 'lucide:a-arrow-down')
+
+    // UI should update after the promise resolves
+    await waitFor(() => {
+      expect(screen.getByText('a-arrow-down')).toBeInTheDocument()
+    })
+  })
+
+  it('has compact height when collapsed', async () => {
+    const ctx = createMockCtx({
+      formValues: { icon: 'lucide:a-arrow-down' },
+    })
+    render(<IconPicker ctx={ctx} />)
+
+    // Root should not have a large fixed max-height when collapsed
+    const root = document.querySelector('.icon-picker-root') as HTMLElement
+    expect(root).toBeInTheDocument()
+
+    // When collapsed, the root should not have max-height forcing it to be tall
+    const computedStyle = window.getComputedStyle(root)
+    expect(computedStyle.maxHeight).not.toBe('500px')
+  })
+
+  it('selects icon with single click and immediately closes picker', async () => {
+    const setFieldValue = vi.fn(() => Promise.resolve())
+    const ctx = createMockCtx({ setFieldValue })
+    render(<IconPicker ctx={ctx} />)
+
+    // Open picker
+    fireEvent.click(screen.getByRole('button', { name: 'Add' }))
+
+    // Verify picker is open
+    expect(screen.getByPlaceholderText('Search icons...')).toBeInTheDocument()
+
+    // Single click on icon
+    const iconButton = await screen.findByTitle('AArrowDown')
+    fireEvent.click(iconButton)
+
+    // Picker should close immediately (no search input)
+    await waitFor(() => {
+      expect(screen.queryByPlaceholderText('Search icons...')).not.toBeInTheDocument()
+    })
+
+    // Selection should be visible
+    expect(screen.getByText('a-arrow-down')).toBeInTheDocument()
+
+    // Should only have been called once
+    expect(setFieldValue).toHaveBeenCalledTimes(1)
   })
 })
