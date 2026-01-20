@@ -1,5 +1,5 @@
 {
-  "name": "datocms-icon-picker",
+  "name": "datocms-plugin-icons",
   "compatibility_date": "2026-01-20",
   "assets": {
     "directory": "./dist"
