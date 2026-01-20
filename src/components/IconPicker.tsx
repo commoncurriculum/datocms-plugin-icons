@@ -78,6 +78,13 @@ export function IconPicker({ ctx }: Props) {
   // This prevents formValue oscillations from wiping out local selections
   const formValue = (ctx.formValues[ctx.fieldPath] as string | null) || null;
 
+  // DEBUG: Log every render to diagnose the issue
+  console.log('[IconPicker] Render:', {
+    fieldPath: ctx.fieldPath,
+    formValue,
+    allFormValues: ctx.formValues,
+  });
+
   // hasUserInteracted tracks if user has made any selection this session
   // Once true, we ONLY use localValue and ignore formValue oscillations
   const hasUserInteracted = useRef(false);
@@ -142,10 +149,16 @@ export function IconPicker({ ctx }: Props) {
   const selectIcon = useCallback(async (pascalName: string) => {
     const kebabName = kebabCase(pascalName);
     const newValue = `lucide:${kebabName}`;
+    console.log('[IconPicker] selectIcon called:', { pascalName, kebabName, newValue, fieldPath: ctx.fieldPath });
     hasUserInteracted.current = true;
     setLocalValue(newValue);
     setIsExpanded(false);
-    await ctx.setFieldValue(ctx.fieldPath, newValue);
+    try {
+      await ctx.setFieldValue(ctx.fieldPath, newValue);
+      console.log('[IconPicker] setFieldValue completed successfully');
+    } catch (error) {
+      console.error('[IconPicker] setFieldValue failed:', error);
+    }
   }, [ctx]);
 
   const clearIcon = useCallback(async () => {
