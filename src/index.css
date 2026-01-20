@@ -1,3 +1,9 @@
+.icon-picker-root {
+  max-height: 500px;
+  display: flex;
+  flex-direction: column;
+}
+
 .current-selection {
   display: flex;
   align-items: center;
@@ -6,8 +12,8 @@
   background: var(--light-bg-color);
   border: 2px solid var(--border-color);
   border-radius: 6px;
-  margin-bottom: 16px;
   min-height: 56px;
+  flex-shrink: 0;
 }
 
 .selected-icon {
@@ -54,12 +60,17 @@
 
 .picker {
   margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1;
 }
 
 .filters {
   display: flex;
   gap: 8px;
   margin-bottom: 12px;
+  flex-shrink: 0;
 }
 
 .filters > * {
@@ -67,18 +78,15 @@
 }
 
 .icon-grid-container {
-  max-height: 300px;
-  overflow-y: auto;
-  overflow-x: hidden;
-  border: 1px solid var(--border-color);
-  border-radius: 4px;
-}
-
-.icon-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
   gap: 4px;
   padding: 8px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  overflow-y: auto;
+  max-height: 300px;
+  flex: 1;
 }
 
 .icon-button {
@@ -117,4 +125,5 @@
   font-size: 12px;
   color: var(--light-body-color);
   margin-top: 8px;
+  flex-shrink: 0;
 }
