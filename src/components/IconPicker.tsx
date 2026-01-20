@@ -1,7 +1,7 @@
 import { RenderFieldExtensionCtx } from 'datocms-plugin-sdk';
 import { Canvas, Button, TextInput, SelectInput } from 'datocms-react-ui';
 import * as LucideIcons from 'lucide-react';
-import { useState, useMemo, useEffect, ComponentType } from 'react';
+import { useState, useMemo, useEffect, useRef, ComponentType } from 'react';
 
 interface Props {
   ctx: RenderFieldExtensionCtx;
@@ -82,19 +82,25 @@ export function IconPicker({ ctx }: Props) {
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('');
   const [categoryData, setCategoryData] = useState<CategoryData>({});
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  // Use a ref to track if we just made a selection (to prevent sync overwriting)
+  const justSelectedRef = useRef(false);
 
   // Track selection locally for immediate feedback
   const [localValue, setLocalValue] = useState<string | null>(
     (ctx.formValues[ctx.fieldPath] as string | null) || null
   );
 
-  // Sync from DatoCMS when it changes externally
+  // Sync from DatoCMS when it changes externally (but not if we just selected)
   useEffect(() => {
-    const externalValue = ctx.formValues[ctx.fieldPath] as string | null;
-    if (externalValue !== localValue) {
-      setLocalValue(externalValue);
+    if (justSelectedRef.current) {
+      justSelectedRef.current = false;
+      return;
     }
-  }, [ctx.formValues[ctx.fieldPath]]);
+    const externalValue = ctx.formValues[ctx.fieldPath] as string | null;
+    setLocalValue(externalValue);
+  }, [ctx.formValues, ctx.fieldPath]);
 
   // Fetch category data
   useEffect(() => {
@@ -129,20 +135,26 @@ export function IconPicker({ ctx }: Props) {
       icons = icons.filter((name) => name.toLowerCase().includes(lower));
     }
 
-    return icons.slice(0, 100);
+    return icons;
   }, [search, category, categoryData]);
 
   const selectIcon = (pascalName: string) => {
     const kebabName = toKebabCase(pascalName);
     const newValue = `lucide:${kebabName}`;
-    setLocalValue(newValue); // Immediate local update
+    justSelectedRef.current = true;
+    setLocalValue(newValue);
     ctx.setFieldValue(ctx.fieldPath, newValue);
+    setIsExpanded(false);
   };
 
   const clearIcon = () => {
+    justSelectedRef.current = true;
     setLocalValue(null);
     ctx.setFieldValue(ctx.fieldPath, null);
   };
+
+  // Auto-expand if no icon selected
+  const showPicker = isExpanded || !localValue;
 
   return (
     <Canvas ctx={ctx}>
@@ -157,60 +169,75 @@ export function IconPicker({ ctx }: Props) {
               <strong>{currentIconName}</strong>
               <span className="selected-value">{localValue}</span>
             </div>
-            <Button buttonSize="xs" onClick={clearIcon}>
-              Clear
-            </Button>
+            <div className="selection-actions">
+              <Button buttonSize="xs" onClick={() => setIsExpanded(!isExpanded)}>
+                {isExpanded ? 'Cancel' : 'Change'}
+              </Button>
+              <Button buttonSize="xs" buttonType="negative" onClick={clearIcon}>
+                Remove
+              </Button>
+            </div>
           </>
         ) : (
-          <span className="no-selection">No icon selected</span>
+          <>
+            <span className="no-selection">No icon selected</span>
+            {!showPicker && (
+              <Button buttonSize="xs" onClick={() => setIsExpanded(true)}>
+                Add Icon
+              </Button>
+            )}
+          </>
         )}
       </div>
 
-      {/* Filters - same row */}
-      <div className="filters">
-        <SelectInput
-          id="category-select"
-          name="category"
-          value={{ label: CATEGORY_OPTIONS.find(o => o.value === category)?.label || 'All Categories', value: category }}
-          onChange={(newValue) => setCategory(newValue?.value || '')}
-          options={CATEGORY_OPTIONS}
-        />
-        <TextInput
-          id="search-input"
-          name="search"
-          value={search}
-          onChange={setSearch}
-          placeholder="Search icons..."
-        />
-      </div>
+      {/* Picker - only shown when expanded or no icon selected */}
+      {showPicker && (
+        <div className="picker">
+          {/* Filters - same row */}
+          <div className="filters">
+            <SelectInput
+              id="category-select"
+              name="category"
+              value={{ label: CATEGORY_OPTIONS.find(o => o.value === category)?.label || 'All Categories', value: category }}
+              onChange={(newValue) => setCategory(newValue?.value || '')}
+              options={CATEGORY_OPTIONS}
+            />
+            <TextInput
+              id="search-input"
+              name="search"
+              value={search}
+              onChange={setSearch}
+              placeholder="Search icons..."
+            />
+          </div>
 
-      {/* Icon grid - contained scroll */}
-      <div className="icon-grid-container">
-        <div className="icon-grid">
-          {filteredIcons.map((name) => {
-            const Icon = iconsMap[name];
-            const isSelected = toPascalCase(currentIconName || '') === name;
-            return (
-              <button
-                key={name}
-                className={`icon-button ${isSelected ? 'selected' : ''}`}
-                onClick={() => selectIcon(name)}
-                title={name}
-                type="button"
-              >
-                <Icon size={20} />
-                <span>{name}</span>
-              </button>
-            );
-          })}
+          {/* Icon grid - contained scroll */}
+          <div className="icon-grid-container">
+            <div className="icon-grid">
+              {filteredIcons.map((name) => {
+                const Icon = iconsMap[name];
+                const isSelected = toPascalCase(currentIconName || '') === name;
+                return (
+                  <button
+                    key={name}
+                    className={`icon-button ${isSelected ? 'selected' : ''}`}
+                    onClick={() => selectIcon(name)}
+                    title={name}
+                    type="button"
+                  >
+                    <Icon size={20} />
+                    <span>{name}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {filteredIcons.length === 0 && (
+            <p className="hint">No icons found. Try a different search or category.</p>
+          )}
+          <p className="hint">{filteredIcons.length} icons</p>
         </div>
-      </div>
-
-      {filteredIcons.length === 0 && (
-        <p className="hint">No icons found. Try a different search or category.</p>
-      )}
-      {filteredIcons.length === 100 && (
-        <p className="hint">Showing first 100 results. Use search or category to narrow down.</p>
       )}
     </Canvas>
   );

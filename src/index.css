@@ -43,6 +43,17 @@
 .no-selection {
   color: var(--light-body-color);
   font-style: italic;
+  flex: 1;
+}
+
+.selection-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.picker {
+  margin-top: 12px;
 }
 
 .filters {
