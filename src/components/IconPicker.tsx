@@ -83,6 +83,7 @@ export function IconPicker({ ctx }: Props) {
   const [category, setCategory] = useState('');
   const [categoryData, setCategoryData] = useState<CategoryData>({});
   const [isExpanded, setIsExpanded] = useState(false);
+  const [customInput, setCustomInput] = useState('');
 
   // Track local selections separately from DatoCMS form values
   // This prevents formValue oscillations from wiping out local selections
@@ -164,6 +165,29 @@ export function IconPicker({ ctx }: Props) {
     await ctx.setFieldValue(ctx.fieldPath, null);
   }, [ctx]);
 
+  const selectCustomIcon = useCallback(async () => {
+    if (!customInput.trim()) return;
+    const newValue = `lucide:${customInput.trim()}`;
+    hasUserInteracted.current = true;
+    setLocalValue(newValue);
+    setIsExpanded(false);
+    setCustomInput('');
+    await ctx.setFieldValue(ctx.fieldPath, newValue);
+  }, [ctx, customInput]);
+
+  const handleCustomInputKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && customInput.trim()) {
+      selectCustomIcon();
+    }
+  }, [customInput, selectCustomIcon]);
+
+  // Clear custom input when picker opens
+  useEffect(() => {
+    if (isExpanded) {
+      setCustomInput('');
+    }
+  }, [isExpanded]);
+
   // Picker visible only when explicitly expanded
   const showPicker = isExpanded;
 
@@ -172,10 +196,16 @@ export function IconPicker({ ctx }: Props) {
       <div className="icon-picker-root">
         {/* Current selection - always visible at top */}
         <div className="current-selection">
-          {CurrentIcon ? (
+          {currentIconName ? (
             <>
               <div className="selected-icon">
-                <CurrentIcon size={32} />
+                {CurrentIcon ? (
+                  <CurrentIcon size={32} />
+                ) : (
+                  <div data-testid="custom-icon-placeholder" className="custom-icon-placeholder">
+                    ?
+                  </div>
+                )}
               </div>
               <div className="selected-info">
                 <span>{selectedValue}</span>
@@ -244,6 +274,25 @@ export function IconPicker({ ctx }: Props) {
               <p className="hint">No icons found. Try a different search or category.</p>
             )}
             <p className="hint">{filteredIcons.length} icons</p>
+
+            {/* Custom icon input */}
+            <div className="custom-input-section">
+              <TextInput
+                id="custom-icon-input"
+                name="customIcon"
+                value={customInput}
+                onChange={setCustomInput}
+                onKeyDown={handleCustomInputKeyDown}
+                placeholder="Or enter custom icon name..."
+              />
+              <Button
+                buttonSize="xs"
+                onClick={selectCustomIcon}
+                disabled={!customInput.trim()}
+              >
+                Use Custom
+              </Button>
+            </div>
           </div>
         )}
       </div>

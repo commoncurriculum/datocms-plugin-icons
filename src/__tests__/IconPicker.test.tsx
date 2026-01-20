@@ -473,4 +473,138 @@ describe('IconPicker', () => {
     // Should correctly read the nested value and show the icon
     expect(screen.getByText('lucide:Target')).toBeInTheDocument()
       })
+
+  describe('Custom icon input', () => {
+    it('shows custom input field when picker is open', async () => {
+      const ctx = createMockCtx()
+      render(<IconPicker ctx={ctx} />)
+
+      // Open picker
+      fireEvent.click(screen.getByRole('button', { name: 'Add' }))
+
+      // Should show custom input field
+      await waitFor(() => {
+        expect(screen.getByPlaceholderText('Or enter custom icon name...')).toBeInTheDocument()
+      })
+    })
+
+    it('allows typing a custom icon name', async () => {
+      const ctx = createMockCtx()
+      render(<IconPicker ctx={ctx} />)
+
+      // Open picker
+      fireEvent.click(screen.getByRole('button', { name: 'Add' }))
+
+      // Type in custom input
+      const customInput = screen.getByPlaceholderText('Or enter custom icon name...')
+      fireEvent.change(customInput, { target: { value: 'MyCustomIcon' } })
+
+      expect(customInput).toHaveValue('MyCustomIcon')
+    })
+
+    it('saves custom icon when Use Custom button is clicked', async () => {
+      const setFieldValue = vi.fn(() => Promise.resolve())
+      const ctx = createMockCtx({ setFieldValue })
+      render(<IconPicker ctx={ctx} />)
+
+      // Open picker
+      fireEvent.click(screen.getByRole('button', { name: 'Add' }))
+
+      // Type custom icon name
+      const customInput = screen.getByPlaceholderText('Or enter custom icon name...')
+      fireEvent.change(customInput, { target: { value: 'MyCustomIcon' } })
+
+      // Click Use Custom button
+      fireEvent.click(screen.getByRole('button', { name: 'Use Custom' }))
+
+      // Should save with lucide: prefix
+      expect(setFieldValue).toHaveBeenCalledWith('icon', 'lucide:MyCustomIcon')
+
+      // Picker should close
+      await waitFor(() => {
+        expect(screen.queryByPlaceholderText('Or enter custom icon name...')).not.toBeInTheDocument()
+      })
+    })
+
+    it('displays custom icon with placeholder when not in Lucide library', async () => {
+      const ctx = createMockCtx({
+        formValues: { icon: 'lucide:MyCustomIcon' },
+      })
+      render(<IconPicker ctx={ctx} />)
+
+      // Should show the custom icon value
+      expect(screen.getByText('lucide:MyCustomIcon')).toBeInTheDocument()
+
+      // Should show a placeholder indicator for unknown icons
+      expect(screen.getByTestId('custom-icon-placeholder')).toBeInTheDocument()
+    })
+
+    it('clears custom input when picker is closed and reopened', async () => {
+      const ctx = createMockCtx()
+      render(<IconPicker ctx={ctx} />)
+
+      // Open picker
+      fireEvent.click(screen.getByRole('button', { name: 'Add' }))
+
+      // Type custom icon name
+      const customInput = screen.getByPlaceholderText('Or enter custom icon name...')
+      fireEvent.change(customInput, { target: { value: 'MyCustomIcon' } })
+
+      // Select a regular icon to close picker
+      const iconButton = await screen.findByTitle('AArrowDown')
+      fireEvent.click(iconButton)
+
+      // Reopen picker
+      fireEvent.click(screen.getByRole('button', { name: 'Change' }))
+
+      // Custom input should be cleared
+      const newCustomInput = screen.getByPlaceholderText('Or enter custom icon name...')
+      expect(newCustomInput).toHaveValue('')
+    })
+
+    it('disables Use Custom button when input is empty', async () => {
+      const ctx = createMockCtx()
+      render(<IconPicker ctx={ctx} />)
+
+      // Open picker
+      fireEvent.click(screen.getByRole('button', { name: 'Add' }))
+
+      // Use Custom button should be disabled when input is empty
+      const useCustomButton = screen.getByRole('button', { name: 'Use Custom' })
+      expect(useCustomButton).toBeDisabled()
+    })
+
+    it('enables Use Custom button when input has value', async () => {
+      const ctx = createMockCtx()
+      render(<IconPicker ctx={ctx} />)
+
+      // Open picker
+      fireEvent.click(screen.getByRole('button', { name: 'Add' }))
+
+      // Type custom icon name
+      const customInput = screen.getByPlaceholderText('Or enter custom icon name...')
+      fireEvent.change(customInput, { target: { value: 'MyCustomIcon' } })
+
+      // Use Custom button should be enabled
+      const useCustomButton = screen.getByRole('button', { name: 'Use Custom' })
+      expect(useCustomButton).not.toBeDisabled()
+    })
+
+    it('submits custom icon on Enter key press', async () => {
+      const setFieldValue = vi.fn(() => Promise.resolve())
+      const ctx = createMockCtx({ setFieldValue })
+      render(<IconPicker ctx={ctx} />)
+
+      // Open picker
+      fireEvent.click(screen.getByRole('button', { name: 'Add' }))
+
+      // Type custom icon name and press Enter
+      const customInput = screen.getByPlaceholderText('Or enter custom icon name...')
+      fireEvent.change(customInput, { target: { value: 'MyCustomIcon' } })
+      fireEvent.keyDown(customInput, { key: 'Enter' })
+
+      // Should save with lucide: prefix
+      expect(setFieldValue).toHaveBeenCalledWith('icon', 'lucide:MyCustomIcon')
+    })
+  })
 })
