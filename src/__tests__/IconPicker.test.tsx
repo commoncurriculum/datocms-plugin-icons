@@ -59,9 +59,8 @@ describe('IconPicker', () => {
     })
     render(<IconPicker ctx={ctx} />)
 
-    expect(screen.getByText('a-arrow-down')).toBeInTheDocument()
-    expect(screen.getByText('lucide:a-arrow-down')).toBeInTheDocument()
-  })
+    expect(screen.getByText('lucide:AArrowDown')).toBeInTheDocument()
+      })
 
   it('shows Add button (not picker) when no icon is selected', async () => {
     const ctx = createMockCtx()
@@ -118,7 +117,7 @@ describe('IconPicker', () => {
 
     // UI should update to show the selected icon
     await waitFor(() => {
-      expect(screen.getByText('a-arrow-down')).toBeInTheDocument()
+      expect(screen.getByText('lucide:AArrowDown')).toBeInTheDocument()
     })
   })
 
@@ -192,16 +191,15 @@ describe('IconPicker', () => {
 
     // Verify selection
     await waitFor(() => {
-      expect(screen.getByText('a-arrow-down')).toBeInTheDocument()
+      expect(screen.getByText('lucide:AArrowDown')).toBeInTheDocument()
     })
 
     // Click Change
     fireEvent.click(screen.getByRole('button', { name: 'Change' }))
 
     // Selection should still be visible at top
-    expect(screen.getByText('a-arrow-down')).toBeInTheDocument()
-    expect(screen.getByText('lucide:a-arrow-down')).toBeInTheDocument()
-  })
+    expect(screen.getByText('lucide:AArrowDown')).toBeInTheDocument()
+      })
 
   it('syncs with external form value changes', async () => {
     const setFieldValue = vi.fn()
@@ -220,9 +218,8 @@ describe('IconPicker', () => {
 
     // Should show the new icon
     await waitFor(() => {
-      expect(screen.getByText('target')).toBeInTheDocument()
-      expect(screen.getByText('lucide:target')).toBeInTheDocument()
-    })
+      expect(screen.getByText('lucide:Target')).toBeInTheDocument()
+          })
   })
 
   it('awaits setFieldValue before updating UI', async () => {
@@ -242,7 +239,7 @@ describe('IconPicker', () => {
 
     // UI should update after the promise resolves
     await waitFor(() => {
-      expect(screen.getByText('a-arrow-down')).toBeInTheDocument()
+      expect(screen.getByText('lucide:AArrowDown')).toBeInTheDocument()
     })
   })
 
@@ -282,7 +279,7 @@ describe('IconPicker', () => {
     })
 
     // Selection should be visible
-    expect(screen.getByText('a-arrow-down')).toBeInTheDocument()
+    expect(screen.getByText('lucide:AArrowDown')).toBeInTheDocument()
 
     // Should only have been called once
     expect(setFieldValue).toHaveBeenCalledTimes(1)
@@ -304,7 +301,7 @@ describe('IconPicker', () => {
     fireEvent.click(iconButton)
 
     // Verify selection shows immediately (before DatoCMS confirms)
-    expect(screen.getByText('a-arrow-down')).toBeInTheDocument()
+    expect(screen.getByText('lucide:AArrowDown')).toBeInTheDocument()
 
     // Simulate DatoCMS re-rendering with STALE formValues (still null)
     // This happens because DatoCMS hasn't processed setFieldValue yet
@@ -316,7 +313,7 @@ describe('IconPicker', () => {
 
     // CRITICAL: Selection should STILL be visible (not flash away)
     // This is what's failing in production - the selection disappears
-    expect(screen.getByText('a-arrow-down')).toBeInTheDocument()
+    expect(screen.getByText('lucide:AArrowDown')).toBeInTheDocument()
     expect(screen.queryByText('No icon selected')).not.toBeInTheDocument()
 
     // Now simulate DatoCMS finally updating formValues
@@ -327,7 +324,7 @@ describe('IconPicker', () => {
     rerender(<IconPicker ctx={updatedCtx} />)
 
     // Selection should still be there
-    expect(screen.getByText('a-arrow-down')).toBeInTheDocument()
+    expect(screen.getByText('lucide:AArrowDown')).toBeInTheDocument()
   })
 
   it('does not call setFieldValue multiple times on single selection', async () => {
@@ -342,7 +339,7 @@ describe('IconPicker', () => {
 
     // Wait for any async operations
     await waitFor(() => {
-      expect(screen.getByText('a-arrow-down')).toBeInTheDocument()
+      expect(screen.getByText('lucide:AArrowDown')).toBeInTheDocument()
     })
 
     // Simulate multiple re-renders from DatoCMS with oscillating formValues
@@ -370,7 +367,7 @@ describe('IconPicker', () => {
     fireEvent.click(iconButton)
 
     // Immediately verify selection before any ctx updates
-    expect(screen.getByText('a-arrow-down')).toBeInTheDocument()
+    expect(screen.getByText('lucide:AArrowDown')).toBeInTheDocument()
 
     // Simulate rapid DatoCMS re-renders with various states
     // This is what seems to happen: null -> value -> null -> value...
@@ -390,7 +387,7 @@ describe('IconPicker', () => {
       rerender(<IconPicker ctx={newCtx} />)
 
       // Selection must ALWAYS remain visible regardless of formValue oscillations
-      expect(screen.getByText('a-arrow-down')).toBeInTheDocument()
+      expect(screen.getByText('lucide:AArrowDown')).toBeInTheDocument()
       expect(screen.queryByText('No icon selected')).not.toBeInTheDocument()
     }
   })
@@ -416,7 +413,7 @@ describe('IconPicker', () => {
     fireEvent.click(iconButton)
 
     // Verify selection
-    expect(screen.getByText('a-arrow-down')).toBeInTheDocument()
+    expect(screen.getByText('lucide:AArrowDown')).toBeInTheDocument()
 
     // Unmount the component (simulates DatoCMS remounting plugin)
     unmount()
@@ -446,9 +443,8 @@ describe('IconPicker', () => {
     render(<IconPicker ctx={ctx} />)
 
     // Should immediately show the saved icon
-    expect(screen.getByText('target')).toBeInTheDocument()
-    expect(screen.getByText('lucide:target')).toBeInTheDocument()
-  })
+    expect(screen.getByText('lucide:Target')).toBeInTheDocument()
+      })
 
   it('handles nested field paths like blocks.0.features.0.licon', async () => {
     // DatoCMS uses dot-notation paths for nested fields in modular content
@@ -475,7 +471,6 @@ describe('IconPicker', () => {
     render(<IconPicker ctx={ctx} />)
 
     // Should correctly read the nested value and show the icon
-    expect(screen.getByText('target')).toBeInTheDocument()
-    expect(screen.getByText('lucide:target')).toBeInTheDocument()
-  })
+    expect(screen.getByText('lucide:Target')).toBeInTheDocument()
+      })
 })

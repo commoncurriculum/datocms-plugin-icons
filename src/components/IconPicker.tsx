@@ -89,13 +89,6 @@ export function IconPicker({ ctx }: Props) {
   // Use getNestedValue to handle paths like "blocks.0.features.0.licon"
   const formValue = (getNestedValue(ctx.formValues, ctx.fieldPath) as string | null) || null;
 
-  // DEBUG: Log every render to diagnose the issue
-  console.log('[IconPicker] Render:', {
-    fieldPath: ctx.fieldPath,
-    formValue,
-    allFormValues: ctx.formValues,
-  });
-
   // hasUserInteracted tracks if user has made any selection this session
   // Once true, we ONLY use localValue and ignore formValue oscillations
   const hasUserInteracted = useRef(false);
@@ -160,16 +153,10 @@ export function IconPicker({ ctx }: Props) {
   const selectIcon = useCallback(async (pascalName: string) => {
     const kebabName = kebabCase(pascalName);
     const newValue = `lucide:${kebabName}`;
-    console.log('[IconPicker] selectIcon called:', { pascalName, kebabName, newValue, fieldPath: ctx.fieldPath });
     hasUserInteracted.current = true;
     setLocalValue(newValue);
     setIsExpanded(false);
-    try {
-      await ctx.setFieldValue(ctx.fieldPath, newValue);
-      console.log('[IconPicker] setFieldValue completed successfully');
-    } catch (error) {
-      console.error('[IconPicker] setFieldValue failed:', error);
-    }
+    await ctx.setFieldValue(ctx.fieldPath, newValue);
   }, [ctx]);
 
   const clearIcon = useCallback(async () => {
@@ -192,8 +179,7 @@ export function IconPicker({ ctx }: Props) {
                 <CurrentIcon size={32} />
               </div>
               <div className="selected-info">
-                <strong>{currentIconName}</strong>
-                <span className="selected-value">{selectedValue}</span>
+                <span>lucide:{currentIconName ? pascalCase(currentIconName) : ''}</span>
               </div>
               <div className="selection-actions">
                 <Button buttonSize="xs" onClick={() => setIsExpanded(!isExpanded)}>
