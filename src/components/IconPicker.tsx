@@ -95,6 +95,14 @@ export function IconPicker({ ctx }: Props) {
     }
   }, [formValue]);
 
+  // Start auto-resizer on mount to properly size the iframe
+  useEffect(() => {
+    ctx.startAutoResizer();
+    return () => {
+      ctx.stopAutoResizer();
+    };
+  }, [ctx]);
+
   // Fetch category data
   useEffect(() => {
     fetch('https://lucide.dev/api/categories')

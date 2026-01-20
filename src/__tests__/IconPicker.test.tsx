@@ -28,6 +28,9 @@ function createMockCtx(overrides: Partial<RenderFieldExtensionCtx> = {}): Render
     fieldPath: 'icon',
     formValues: { icon: null },
     setFieldValue: vi.fn(),
+    startAutoResizer: vi.fn(),
+    stopAutoResizer: vi.fn(),
+    updateHeight: vi.fn(),
     field: { attributes: { api_key: 'icon' } },
     itemType: { attributes: { api_key: 'test' } },
     ...overrides,
@@ -390,5 +393,13 @@ describe('IconPicker', () => {
       expect(screen.getByText('a-arrow-down')).toBeInTheDocument()
       expect(screen.queryByText('No icon selected')).not.toBeInTheDocument()
     }
+  })
+
+  it('calls startAutoResizer on mount', async () => {
+    const startAutoResizer = vi.fn()
+    const ctx = createMockCtx({ startAutoResizer })
+    render(<IconPicker ctx={ctx} />)
+
+    expect(startAutoResizer).toHaveBeenCalled()
   })
 })
