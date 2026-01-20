@@ -449,4 +449,33 @@ describe('IconPicker', () => {
     expect(screen.getByText('target')).toBeInTheDocument()
     expect(screen.getByText('lucide:target')).toBeInTheDocument()
   })
+
+  it('handles nested field paths like blocks.0.features.0.licon', async () => {
+    // DatoCMS uses dot-notation paths for nested fields in modular content
+    // The fieldPath might be "blocks.0.features.0.licon"
+    // And formValues would be { blocks: [{ features: [{ licon: 'lucide:target' }] }] }
+    const setFieldValue = vi.fn(() => Promise.resolve())
+    const ctx = {
+      fieldPath: 'blocks.0.features.0.licon',
+      formValues: {
+        blocks: [{
+          features: [{
+            licon: 'lucide:target'
+          }]
+        }]
+      },
+      setFieldValue,
+      startAutoResizer: vi.fn(),
+      stopAutoResizer: vi.fn(),
+      updateHeight: vi.fn(),
+      field: { attributes: { api_key: 'licon' } },
+      itemType: { attributes: { api_key: 'test' } },
+    } as unknown as RenderFieldExtensionCtx
+
+    render(<IconPicker ctx={ctx} />)
+
+    // Should correctly read the nested value and show the icon
+    expect(screen.getByText('target')).toBeInTheDocument()
+    expect(screen.getByText('lucide:target')).toBeInTheDocument()
+  })
 })

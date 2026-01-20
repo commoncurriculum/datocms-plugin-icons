@@ -23,6 +23,16 @@ const ALL_ICONS = Object.keys(LucideIcons).filter(
 
 type CategoryData = Record<string, string[]>;
 
+// Helper to get nested value from object using dot-notation path
+// e.g., getNestedValue({ a: { b: 1 } }, 'a.b') returns 1
+// e.g., getNestedValue({ arr: [{ x: 1 }] }, 'arr.0.x') returns 1
+function getNestedValue(obj: Record<string, unknown>, path: string): unknown {
+  return path.split('.').reduce((current, key) => {
+    if (current === null || current === undefined) return undefined;
+    return (current as Record<string, unknown>)[key];
+  }, obj as unknown);
+}
+
 const CATEGORY_OPTIONS = [
   { label: 'All Categories', value: '' },
   { label: 'Accessibility', value: 'accessibility' },
@@ -76,7 +86,8 @@ export function IconPicker({ ctx }: Props) {
 
   // Track local selections separately from DatoCMS form values
   // This prevents formValue oscillations from wiping out local selections
-  const formValue = (ctx.formValues[ctx.fieldPath] as string | null) || null;
+  // Use getNestedValue to handle paths like "blocks.0.features.0.licon"
+  const formValue = (getNestedValue(ctx.formValues, ctx.fieldPath) as string | null) || null;
 
   // DEBUG: Log every render to diagnose the issue
   console.log('[IconPicker] Render:', {
