@@ -2,7 +2,7 @@ import { RenderFieldExtensionCtx } from 'datocms-plugin-sdk';
 import { Canvas, Button, TextInput, SelectInput } from 'datocms-react-ui';
 import * as LucideIcons from 'lucide-react';
 import { useState, useMemo, useEffect, useCallback, useRef, ComponentType } from 'react';
-import { kebabCase, pascalCase } from 'change-case';
+import { kebabCase } from 'change-case';
 
 interface Props {
   ctx: RenderFieldExtensionCtx;
@@ -122,11 +122,9 @@ export function IconPicker({ ctx }: Props) {
       .catch(() => {});
   }, []);
 
-  // Parse current icon name from value like "lucide:target"
+  // Parse current icon name from value like "lucide:AArrowDown"
   const currentIconName = selectedValue?.replace('lucide:', '') || null;
-  const CurrentIcon = currentIconName
-    ? iconsMap[pascalCase(currentIconName)]
-    : null;
+  const CurrentIcon = currentIconName ? iconsMap[currentIconName] : null;
 
   // Filter icons based on search and category
   const filteredIcons = useMemo(() => {
@@ -151,8 +149,9 @@ export function IconPicker({ ctx }: Props) {
   }, [search, category, categoryData]);
 
   const selectIcon = useCallback(async (pascalName: string) => {
-    const kebabName = kebabCase(pascalName);
-    const newValue = `lucide:${kebabName}`;
+    // Store as lucide:PascalName so it matches Lucide's React component names directly
+    // e.g., lucide:AArrowDown -> strip prefix -> import { AArrowDown } from 'lucide-react'
+    const newValue = `lucide:${pascalName}`;
     hasUserInteracted.current = true;
     setLocalValue(newValue);
     setIsExpanded(false);
@@ -179,7 +178,7 @@ export function IconPicker({ ctx }: Props) {
                 <CurrentIcon size={32} />
               </div>
               <div className="selected-info">
-                <span>lucide:{currentIconName ? pascalCase(currentIconName) : ''}</span>
+                <span>{selectedValue}</span>
               </div>
               <div className="selection-actions">
                 <Button buttonSize="xs" onClick={() => setIsExpanded(!isExpanded)}>
@@ -225,7 +224,7 @@ export function IconPicker({ ctx }: Props) {
             <div className="icon-grid-container">
               {filteredIcons.map((name) => {
                 const Icon = iconsMap[name];
-                const isSelected = pascalCase(currentIconName || '') === name;
+                const isSelected = currentIconName === name;
                 return (
                   <button
                     key={name}

@@ -55,7 +55,7 @@ describe('IconPicker', () => {
 
   it('renders with a pre-selected icon', async () => {
     const ctx = createMockCtx({
-      formValues: { icon: 'lucide:a-arrow-down' },
+      formValues: { icon: 'lucide:AArrowDown' },
     })
     render(<IconPicker ctx={ctx} />)
 
@@ -88,7 +88,7 @@ describe('IconPicker', () => {
 
   it('hides picker when icon is selected', async () => {
     const ctx = createMockCtx({
-      formValues: { icon: 'lucide:a-arrow-down' },
+      formValues: { icon: 'lucide:AArrowDown' },
     })
     render(<IconPicker ctx={ctx} />)
 
@@ -113,7 +113,7 @@ describe('IconPicker', () => {
     fireEvent.click(iconButtons[0])
 
     // setFieldValue should be called
-    expect(setFieldValue).toHaveBeenCalledWith('icon', 'lucide:a-arrow-down')
+    expect(setFieldValue).toHaveBeenCalledWith('icon', 'lucide:AArrowDown')
 
     // UI should update to show the selected icon
     await waitFor(() => {
@@ -124,7 +124,7 @@ describe('IconPicker', () => {
   it('clears icon when Remove is clicked', async () => {
     const setFieldValue = vi.fn()
     const ctx = createMockCtx({
-      formValues: { icon: 'lucide:a-arrow-down' },
+      formValues: { icon: 'lucide:AArrowDown' },
       setFieldValue,
     })
     render(<IconPicker ctx={ctx} />)
@@ -161,7 +161,7 @@ describe('IconPicker', () => {
 
   it('expands picker when Change is clicked', async () => {
     const ctx = createMockCtx({
-      formValues: { icon: 'lucide:a-arrow-down' },
+      formValues: { icon: 'lucide:AArrowDown' },
     })
     render(<IconPicker ctx={ctx} />)
 
@@ -211,7 +211,7 @@ describe('IconPicker', () => {
 
     // Simulate external change (e.g., after save/reload)
     const updatedCtx = createMockCtx({
-      formValues: { icon: 'lucide:target' },
+      formValues: { icon: 'lucide:Target' },
       setFieldValue,
     })
     rerender(<IconPicker ctx={updatedCtx} />)
@@ -235,7 +235,7 @@ describe('IconPicker', () => {
     fireEvent.click(iconButtons[0])
 
     // setFieldValue should have been awaited (called and resolved)
-    expect(setFieldValue).toHaveBeenCalledWith('icon', 'lucide:a-arrow-down')
+    expect(setFieldValue).toHaveBeenCalledWith('icon', 'lucide:AArrowDown')
 
     // UI should update after the promise resolves
     await waitFor(() => {
@@ -245,7 +245,7 @@ describe('IconPicker', () => {
 
   it('has compact height when collapsed', async () => {
     const ctx = createMockCtx({
-      formValues: { icon: 'lucide:a-arrow-down' },
+      formValues: { icon: 'lucide:AArrowDown' },
     })
     render(<IconPicker ctx={ctx} />)
 
@@ -319,7 +319,7 @@ describe('IconPicker', () => {
     // Now simulate DatoCMS finally updating formValues
     const updatedCtx = createMockCtx({
       setFieldValue,
-      formValues: { icon: 'lucide:a-arrow-down' }
+      formValues: { icon: 'lucide:AArrowDown' }
     })
     rerender(<IconPicker ctx={updatedCtx} />)
 
@@ -346,7 +346,7 @@ describe('IconPicker', () => {
     for (let i = 0; i < 5; i++) {
       const newCtx = createMockCtx({
         setFieldValue,
-        formValues: { icon: i % 2 === 0 ? null : 'lucide:a-arrow-down' }
+        formValues: { icon: i % 2 === 0 ? null : 'lucide:AArrowDown' }
       })
       rerender(<IconPicker ctx={newCtx} />)
     }
@@ -373,9 +373,9 @@ describe('IconPicker', () => {
     // This is what seems to happen: null -> value -> null -> value...
     const states = [
       null,
-      'lucide:a-arrow-down',
+      'lucide:AArrowDown',
       null,
-      'lucide:a-arrow-down',
+      'lucide:AArrowDown',
       null,
     ]
 
@@ -438,7 +438,7 @@ describe('IconPicker', () => {
     const setFieldValue = vi.fn(() => Promise.resolve())
     const ctx = createMockCtx({
       setFieldValue,
-      formValues: { icon: 'lucide:target' }
+      formValues: { icon: 'lucide:Target' }
     })
     render(<IconPicker ctx={ctx} />)
 
@@ -449,14 +449,14 @@ describe('IconPicker', () => {
   it('handles nested field paths like blocks.0.features.0.licon', async () => {
     // DatoCMS uses dot-notation paths for nested fields in modular content
     // The fieldPath might be "blocks.0.features.0.licon"
-    // And formValues would be { blocks: [{ features: [{ licon: 'lucide:target' }] }] }
+    // And formValues would be { blocks: [{ features: [{ licon: 'lucide:Target' }] }] }
     const setFieldValue = vi.fn(() => Promise.resolve())
     const ctx = {
       fieldPath: 'blocks.0.features.0.licon',
       formValues: {
         blocks: [{
           features: [{
-            licon: 'lucide:target'
+            licon: 'lucide:Target'
           }]
         }]
       },
