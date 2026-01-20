@@ -1,7 +1,7 @@
 import { RenderFieldExtensionCtx } from 'datocms-plugin-sdk';
 import { Canvas, Button, TextInput, SelectInput } from 'datocms-react-ui';
 import * as LucideIcons from 'lucide-react';
-import { useState, useMemo, useEffect, useCallback, ComponentType } from 'react';
+import { useState, useMemo, useEffect, useCallback, useRef, ComponentType } from 'react';
 import { kebabCase, pascalCase } from 'change-case';
 
 interface Props {
@@ -74,13 +74,25 @@ export function IconPicker({ ctx }: Props) {
   const [categoryData, setCategoryData] = useState<CategoryData>({});
   const [isExpanded, setIsExpanded] = useState(false);
 
-  // Track the selected value in state, synced with form values
+  // Track local selections separately from DatoCMS form values
+  // This prevents formValue oscillations from wiping out local selections
   const formValue = (ctx.formValues[ctx.fieldPath] as string | null) || null;
-  const [selectedValue, setSelectedValue] = useState<string | null>(formValue);
 
-  // Sync with external form value changes (e.g., after save/reload)
+  // hasUserInteracted tracks if user has made any selection this session
+  // Once true, we ONLY use localValue and ignore formValue oscillations
+  const hasUserInteracted = useRef(false);
+  const [localValue, setLocalValue] = useState<string | null>(formValue);
+
+  // The displayed value: once user interacts, always use localValue
+  // Otherwise use formValue (for initial load)
+  const selectedValue = hasUserInteracted.current ? localValue : formValue;
+
+  // Sync localValue with formValue on initial load or when formValue changes externally
+  // But ONLY if user hasn't interacted yet
   useEffect(() => {
-    setSelectedValue(formValue);
+    if (!hasUserInteracted.current) {
+      setLocalValue(formValue);
+    }
   }, [formValue]);
 
   // Fetch category data
@@ -122,13 +134,15 @@ export function IconPicker({ ctx }: Props) {
   const selectIcon = useCallback(async (pascalName: string) => {
     const kebabName = kebabCase(pascalName);
     const newValue = `lucide:${kebabName}`;
-    setSelectedValue(newValue);
+    hasUserInteracted.current = true;
+    setLocalValue(newValue);
     setIsExpanded(false);
     await ctx.setFieldValue(ctx.fieldPath, newValue);
   }, [ctx]);
 
   const clearIcon = useCallback(async () => {
-    setSelectedValue(null);
+    hasUserInteracted.current = true;
+    setLocalValue(null);
     await ctx.setFieldValue(ctx.fieldPath, null);
   }, [ctx]);
 

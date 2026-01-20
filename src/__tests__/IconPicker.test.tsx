@@ -284,4 +284,111 @@ describe('IconPicker', () => {
     // Should only have been called once
     expect(setFieldValue).toHaveBeenCalledTimes(1)
   })
+
+  it('maintains selection when ctx re-renders with stale formValues', async () => {
+    // This simulates real DatoCMS behavior where:
+    // 1. User selects icon
+    // 2. setFieldValue is called
+    // 3. DatoCMS re-renders component with SAME ctx (formValues still null)
+    // 4. Then eventually re-renders with updated formValues
+    const setFieldValue = vi.fn(() => Promise.resolve())
+    const ctx = createMockCtx({ setFieldValue })
+    const { rerender } = render(<IconPicker ctx={ctx} />)
+
+    // Open picker and select icon
+    fireEvent.click(screen.getByRole('button', { name: 'Add' }))
+    const iconButton = await screen.findByTitle('AArrowDown')
+    fireEvent.click(iconButton)
+
+    // Verify selection shows immediately (before DatoCMS confirms)
+    expect(screen.getByText('a-arrow-down')).toBeInTheDocument()
+
+    // Simulate DatoCMS re-rendering with STALE formValues (still null)
+    // This happens because DatoCMS hasn't processed setFieldValue yet
+    const staleCtx = createMockCtx({
+      setFieldValue,
+      formValues: { icon: null }  // Still null - DatoCMS is slow
+    })
+    rerender(<IconPicker ctx={staleCtx} />)
+
+    // CRITICAL: Selection should STILL be visible (not flash away)
+    // This is what's failing in production - the selection disappears
+    expect(screen.getByText('a-arrow-down')).toBeInTheDocument()
+    expect(screen.queryByText('No icon selected')).not.toBeInTheDocument()
+
+    // Now simulate DatoCMS finally updating formValues
+    const updatedCtx = createMockCtx({
+      setFieldValue,
+      formValues: { icon: 'lucide:a-arrow-down' }
+    })
+    rerender(<IconPicker ctx={updatedCtx} />)
+
+    // Selection should still be there
+    expect(screen.getByText('a-arrow-down')).toBeInTheDocument()
+  })
+
+  it('does not call setFieldValue multiple times on single selection', async () => {
+    const setFieldValue = vi.fn(() => Promise.resolve())
+    const ctx = createMockCtx({ setFieldValue })
+    const { rerender } = render(<IconPicker ctx={ctx} />)
+
+    // Open picker and select icon
+    fireEvent.click(screen.getByRole('button', { name: 'Add' }))
+    const iconButton = await screen.findByTitle('AArrowDown')
+    fireEvent.click(iconButton)
+
+    // Wait for any async operations
+    await waitFor(() => {
+      expect(screen.getByText('a-arrow-down')).toBeInTheDocument()
+    })
+
+    // Simulate multiple re-renders from DatoCMS with oscillating formValues
+    for (let i = 0; i < 5; i++) {
+      const newCtx = createMockCtx({
+        setFieldValue,
+        formValues: { icon: i % 2 === 0 ? null : 'lucide:a-arrow-down' }
+      })
+      rerender(<IconPicker ctx={newCtx} />)
+    }
+
+    // setFieldValue should only have been called ONCE from the initial selection
+    expect(setFieldValue).toHaveBeenCalledTimes(1)
+  })
+
+  it('survives rapid ctx changes with different formValue states', async () => {
+    // This simulates DatoCMS rapidly re-rendering with various formValue states
+    const setFieldValue = vi.fn(() => Promise.resolve())
+    const ctx = createMockCtx({ setFieldValue })
+    const { rerender } = render(<IconPicker ctx={ctx} />)
+
+    // Open picker and select icon
+    fireEvent.click(screen.getByRole('button', { name: 'Add' }))
+    const iconButton = await screen.findByTitle('AArrowDown')
+    fireEvent.click(iconButton)
+
+    // Immediately verify selection before any ctx updates
+    expect(screen.getByText('a-arrow-down')).toBeInTheDocument()
+
+    // Simulate rapid DatoCMS re-renders with various states
+    // This is what seems to happen: null -> value -> null -> value...
+    const states = [
+      null,
+      'lucide:a-arrow-down',
+      null,
+      'lucide:a-arrow-down',
+      null,
+    ]
+
+    for (const iconValue of states) {
+      const newCtx = createMockCtx({
+        setFieldValue,
+        formValues: { icon: iconValue }
+      })
+      rerender(<IconPicker ctx={newCtx} />)
+
+      // Selection must ALWAYS remain visible regardless of formValue oscillations
+      expect(screen.getByText('a-arrow-down')).toBeInTheDocument()
+      expect(screen.queryByText('No icon selected')).not.toBeInTheDocument()
+    }
+  })
 })
